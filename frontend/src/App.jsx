@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import { initWeb3Modal, connectWallet, disconnectWallet, getProvider } from './wallet'
+import { initReown, reownLogin, reownGetUser, reownLogout } from './reown'
 import TicketMint from './components/TicketMint'
 
 export default function App(){
@@ -7,6 +8,8 @@ export default function App(){
 
   useEffect(()=>{
     initWeb3Modal()
+    // initialize Reown AppKit if API key provided
+    initReown(process.env.VITE_REOWN_API_KEY).catch(()=>{})
   },[])
 
   async function onConnect(){
@@ -17,6 +20,25 @@ export default function App(){
   async function onDisconnect(){
     await disconnectWallet()
     setAddress(null)
+  }
+
+  const [reownUser, setReownUser] = useState(null)
+
+  async function onReownLogin(){
+    try{
+      await reownLogin()
+      const u = await reownGetUser()
+      setReownUser(u)
+    }catch(e){
+      console.warn('Reown login failed', e)
+    }
+  }
+
+  async function onReownLogout(){
+    try{
+      await reownLogout()
+      setReownUser(null)
+    }catch(e){ console.warn(e) }
   }
 
   return (
@@ -32,6 +54,23 @@ export default function App(){
             </>
           ) : (
             <button onClick={onConnect}>Connect Wallet (WalletConnect)</button>
+          )}
+        </div>
+      </div>
+
+      <div className="card">
+        <strong>Reown AppKit</strong>
+        <div style={{marginTop:8}}>
+          {reownUser ? (
+            <>
+              <div>Reown user: {JSON.stringify(reownUser)}</div>
+              <button onClick={onReownLogout}>Logout Reown</button>
+            </>
+          ) : (
+            <>
+              <div>Use Reown to sign in (if configured)</div>
+              <button onClick={onReownLogin}>Login with Reown</button>
+            </>
           )}
         </div>
       </div>
